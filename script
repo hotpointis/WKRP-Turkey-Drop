@@ -36,7 +36,24 @@
     top: 110px;
     font-size: 38px;
     line-height: 1;
-    animation: wkrp-drop 3s ease-in forwards;
+    animation: wkrp-drop 2.7s ease-in forwards;
+  }
+
+  .wkrp-splat {
+    position: absolute;
+    bottom: 12px;
+    font-size: 38px;
+    line-height: 1;
+    transform-origin: bottom center;
+    animation: wkrp-splat 0.8s ease-out forwards;
+  }
+
+  .wkrp-impact {
+    position: absolute;
+    bottom: 20px;
+    font-size: 30px;
+    line-height: 1;
+    animation: wkrp-impact 0.5s ease-out forwards;
   }
 
   @keyframes wkrp-fly {
@@ -45,7 +62,18 @@
 
   @keyframes wkrp-drop {
     from { transform: translateY(0) rotate(-20deg); }
-    to { transform: translateY(calc(100vh + 80px)) rotate(300deg); }
+    to { transform: translateY(calc(100vh - 155px)) rotate(320deg); }
+  }
+
+  @keyframes wkrp-splat {
+    0%   { transform: scale(1.2, 0.25); opacity: 1; }
+    35%  { transform: scale(1.35, 0.2); opacity: 1; }
+    100% { transform: scale(1.35, 0.2); opacity: 0; }
+  }
+
+  @keyframes wkrp-impact {
+    from { transform: scale(0.5); opacity: 1; }
+    to   { transform: scale(1.6); opacity: 0; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -74,19 +102,16 @@
     var day = Number(datePart('day'));
     var weekday = datePart('weekday');
 
-    // Wednesday before Thanksgiving: November 21–27.
+    // Thanksgiving and the Wednesday immediately before it.
     var thanksgivingEve =
       weekday === 'Wednesday' && day >= 21 && day <= 27;
-
-    // Thanksgiving: fourth Thursday, November 22–28.
     var thanksgiving =
       weekday === 'Thursday' && day >= 22 && day <= 28;
 
     if (month !== 11 || (!thanksgivingEve && !thanksgiving)) return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    var sessionKey =
-      'wkrp-turkey-drop-' + datePart('year') + '-' + day;
+    var sessionKey = 'wkrp-turkey-splat-' + datePart('year') + '-' + day;
 
     try {
       if (sessionStorage.getItem(sessionKey)) return;
@@ -111,18 +136,41 @@
     var startTime = Date.now();
     var dropped = 0;
 
+    function makeSplat(left) {
+      var impact = document.createElement('span');
+      impact.className = 'wkrp-impact';
+      impact.textContent = '💥';
+      impact.style.left = left;
+      scene.appendChild(impact);
+
+      var splat = document.createElement('span');
+      splat.className = 'wkrp-splat';
+      splat.textContent = '🦃';
+      splat.style.left = left;
+      scene.appendChild(splat);
+
+      setTimeout(function () {
+        impact.remove();
+        splat.remove();
+      }, 850);
+    }
+
     var dropInterval = setInterval(function () {
       var turkey = document.createElement('span');
       turkey.className = 'wkrp-turkey';
       turkey.textContent = '🦃';
 
       var progress = Math.min((Date.now() - startTime) / 7000, 1);
-      turkey.style.left =
-        (-150 + progress * (window.innerWidth + 370)) + 'px';
-
+      var left = (-150 + progress * (window.innerWidth + 370)) + 'px';
+      turkey.style.left = left;
       scene.appendChild(turkey);
-      dropped++;
 
+      turkey.addEventListener('animationend', function () {
+        turkey.remove();
+        makeSplat(left);
+      }, { once: true });
+
+      dropped++;
       if (dropped >= 7) clearInterval(dropInterval);
     }, 650);
 
