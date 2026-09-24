@@ -1,0 +1,141 @@
+<style>
+  #wkrp-turkey-scene {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483646;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  #wkrp-chopper {
+    position: absolute;
+    top: 55px;
+    left: -220px;
+    white-space: nowrap;
+    animation: wkrp-fly 7s linear forwards;
+  }
+
+  #wkrp-chopper .helicopter {
+    font-size: 72px;
+    line-height: 1;
+  }
+
+  #wkrp-chopper .label {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: -8px;
+    padding: 5px 8px;
+    background: #b51e23;
+    color: white;
+    font: bold 12px Arial, sans-serif;
+    border-radius: 4px;
+  }
+
+  .wkrp-turkey {
+    position: absolute;
+    top: 110px;
+    font-size: 38px;
+    line-height: 1;
+    animation: wkrp-drop 3s ease-in forwards;
+  }
+
+  @keyframes wkrp-fly {
+    to { left: calc(100vw + 220px); }
+  }
+
+  @keyframes wkrp-drop {
+    from { transform: translateY(0) rotate(-20deg); }
+    to { transform: translateY(calc(100vh + 80px)) rotate(300deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #wkrp-turkey-scene { display: none; }
+  }
+</style>
+
+<script>
+(function () {
+  function runTurkeyDrop() {
+    var parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      weekday: 'long'
+    }).formatToParts(new Date());
+
+    function datePart(type) {
+      return parts.find(function (part) {
+        return part.type === type;
+      }).value;
+    }
+
+    var month = Number(datePart('month'));
+    var day = Number(datePart('day'));
+    var weekday = datePart('weekday');
+
+    // Wednesday before Thanksgiving: November 21–27.
+    var thanksgivingEve =
+      weekday === 'Wednesday' && day >= 21 && day <= 27;
+
+    // Thanksgiving: fourth Thursday, November 22–28.
+    var thanksgiving =
+      weekday === 'Thursday' && day >= 22 && day <= 28;
+
+    if (month !== 11 || (!thanksgivingEve && !thanksgiving)) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var sessionKey =
+      'wkrp-turkey-drop-' + datePart('year') + '-' + day;
+
+    try {
+      if (sessionStorage.getItem(sessionKey)) return;
+      sessionStorage.setItem(sessionKey, 'shown');
+    } catch (error) {
+      // Continue if browser storage is unavailable.
+    }
+
+    var scene = document.createElement('div');
+    scene.id = 'wkrp-turkey-scene';
+    scene.setAttribute('aria-hidden', 'true');
+
+    var chopper = document.createElement('div');
+    chopper.id = 'wkrp-chopper';
+    chopper.innerHTML =
+      '<span class="helicopter">🚁</span>' +
+      '<span class="label">WKRP NEWS</span>';
+
+    scene.appendChild(chopper);
+    document.body.appendChild(scene);
+
+    var startTime = Date.now();
+    var dropped = 0;
+
+    var dropInterval = setInterval(function () {
+      var turkey = document.createElement('span');
+      turkey.className = 'wkrp-turkey';
+      turkey.textContent = '🦃';
+
+      var progress = Math.min((Date.now() - startTime) / 7000, 1);
+      turkey.style.left =
+        (-150 + progress * (window.innerWidth + 370)) + 'px';
+
+      scene.appendChild(turkey);
+      dropped++;
+
+      if (dropped >= 7) clearInterval(dropInterval);
+    }, 650);
+
+    setTimeout(function () {
+      clearInterval(dropInterval);
+      scene.remove();
+    }, 8500);
+  }
+
+  if (document.readyState === 'complete') {
+    runTurkeyDrop();
+  } else {
+    window.addEventListener('load', runTurkeyDrop, { once: true });
+  }
+})();
+</script>
