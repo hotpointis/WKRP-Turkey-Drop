@@ -1,1 +1,1 @@
-add script just before the </body>
+add script just before the close body tag.
